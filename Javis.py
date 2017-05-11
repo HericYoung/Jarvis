@@ -2,15 +2,16 @@ import itchat
 import time
 from itchat.content import *
 
-switch = 'on'
-times = 0
-toOldUserName = ''
+switch = 'on' #自动回复开关
+times = 0     #对同一用户的回复次数
+toOldUserName = ''#记录当前对话用户（对方）
 
+#根据系统时间获取本人当前所处状态
 def getStat():
-    stat = ''
-    localtime = time.localtime(time.time())
-    hour = localtime.tm_hour
-    wday = localtime.tm_wday
+    stat = '' #本人所处状态
+    localtime = time.localtime(time.time())  #获取当前系统时间
+    hour = localtime.tm_hour    #获取当前小时
+    wday = localtime.tm_wday    #获取当前星期，0为星期一
     if wday < 5:
         if (hour >= 9 and hour < 12) or (hour >= 12 and hour < 19):
             stat = 'working'
@@ -27,6 +28,7 @@ def getStat():
             stat = 'rest'
     return stat
 
+#自动回复函数
 def sendByJarvis(toUserName):
     global switch
     global times
@@ -34,7 +36,7 @@ def sendByJarvis(toUserName):
 
     stat = getStat()
 
-    if toOldUserName != toUserName:
+    if toOldUserName != toUserName:  #若最新接收到的消息不是来自当前对话用户，则将回复次数复位为0，记录为新对话
         toOldUserName = toUserName
         times = 0
 
@@ -62,11 +64,13 @@ def sendByJarvis(toUserName):
             itchat.send("|-_-|zzzZ...", toUserName)
     return
 
-@itchat.msg_register([TEXT, PICTURE, MAP, CARD, NOTE, SHARING, RECORDING, ATTACHMENT, VIDEO])
-def text_reply(msg):
+@itchat.msg_register([TEXT, PICTURE, MAP, CARD, NOTE, SHARING, RECORDING, ATTACHMENT, VIDEO])  #注册消息类型
+def text_reply(msg):   #监听接收消息
     global times
     global toUserName
     global switch
+
+    #若发信人为自己，根据接收的消息进行处理，若收到“1”，打开自动回复，若收到“0”，关闭自动回复
     if msg['FromUserName'] == msg['ToUserName']:
         if msg['Content'] == "0":
             switch = 'off'
@@ -77,9 +81,11 @@ def text_reply(msg):
             times = 0
             itchat.send('自动回复已打开', msg['ToUserName'])
         return
+
+    #若发信人为其他用户，则又由Jarvis回复
     else:
         toUserName = msg['FromUserName']
         sendByJarvis(toUserName)
 
-itchat.auto_login(hotReload=True)
+itchat.auto_login(hotReload=True)   #热登录，登录过一次之后再次打开程序时无需登录
 itchat.run()
